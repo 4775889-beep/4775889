@@ -13,12 +13,15 @@ def start_timer():
     start_time = time.time()
 
 
-def end_timer_and_print(local_msg):
+def end_timer_and_return(local_msg):
     torch.cuda.synchronize()
     end_time = time.time()
+    elapsed = end_time - start_time
+    max_memory = torch.cuda.max_memory_allocated()
     print("\n" + local_msg)
-    print("Total execution time = {:.3f} sec".format(end_time - start_time))
-    print("Max memory used by tensors = {} bytes".format(torch.cuda.max_memory_allocated()))
+    print("Total execution time = {:.3f} sec".format(elapsed))
+    print("Max memory used by tensors = {} bytes".format(max_memory))
+    return elapsed, max_memory
 
 
 def make_model(in_size, out_size, num_layers):
@@ -48,6 +51,27 @@ targets = [torch.randn(batch_size, out_size) for _ in range(num_batches)]
 
 loss_fn = torch.nn.MSELoss().cuda()
 
+# Run FP32 training (baseline)
+print("=" * 60)
+print("Running FP32 (baseline) training...")
+print("=" * 60)
+net = make_model(in_size, out_size, num_layers)
+opt = torch.optim.SGD(net.parameters(), lr=0.001)
+
+start_timer()
+for epoch in range(epochs):
+    for input, target in zip(data, targets):
+        output = net(input)
+        loss = loss_fn(output, target)
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+fp32_time, fp32_memory = end_timer_and_return("FP32 precision:")
+
+# Run AMP training
+print("\n" + "=" * 60)
+print("Running AMP (mixed precision) training...")
+print("=" * 60)
 net = make_model(in_size, out_size, num_layers)
 opt = torch.optim.SGD(net.parameters(), lr=0.001)
 scaler = torch.amp.GradScaler("cuda")
@@ -62,4 +86,17 @@ for epoch in range(epochs):
         scaler.step(opt)
         scaler.update()
         opt.zero_grad()
-end_timer_and_print("AMP precision:")
+amp_time, amp_memory = end_timer_and_return("AMP precision:")
+
+# Display comparison results
+print("\n" + "=" * 60)
+print("PERFORMANCE COMPARISON")
+print("=" * 60)
+print(f"FP32 Time:   {fp32_time:.3f} sec")
+print(f"AMP Time:    {amp_time:.3f} sec")
+print(f"Speedup:     {fp32_time/amp_time:.2f}x")
+print()
+print(f"FP32 Memory: {fp32_memory:,} bytes ({fp32_memory/1024**2:.1f} MB)")
+print(f"AMP Memory:  {amp_memory:,} bytes ({amp_memory/1024**2:.1f} MB)")
+print(f"Memory saved: {(1 - amp_memory/fp32_memory)*100:.1f}%")
+print("=" * 60)
