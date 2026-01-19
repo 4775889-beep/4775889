@@ -129,3 +129,82 @@ Use these scripts as templates to build:
 - Batch processing pipelines
 
 All scripts handle API key management, error handling, and demonstrate best practices for using the Anthropic SDK.
+
+---
+
+## Advanced: Code Generation Tools
+
+### `my_claude_coder.py` - Smart Code Generator
+
+Generates code from prompt files with intelligent code extraction:
+
+```bash
+python3 my_claude_coder.py PROMPT.md
+```
+
+Features:
+- Automatically extracts Python code from markdown responses
+- Saves generated code to files
+- Shows preview of generated code
+- Smart filename handling (PROMPT.md → generated_PROMPT.py)
+
+**Example:**
+```bash
+# Edit your prompt
+nano PROMPT.md
+
+# Generate code
+python3 my_claude_coder.py PROMPT.md
+
+# Output: generated_PROMPT.py
+```
+
+### `auto_code_loop.py` - Auto-Fixing Code Generator
+
+Automatically generates code, runs it, and fixes errors iteratively:
+
+```bash
+python3 auto_code_loop.py RUNNABLE_PROMPT.md
+```
+
+Features:
+- Generates code from your prompt
+- Runs the generated code
+- If errors occur, sends them back to Claude for fixing
+- Iterates up to 5 times until code works
+- Perfect for rapid prototyping
+
+**How it works:**
+1. Reads your prompt from a file
+2. Calls Claude API to generate code
+3. Saves and executes the generated code
+4. If errors occur, sends error messages back to Claude
+5. Repeats until code runs successfully or max iterations reached
+
+**Example workflow:**
+```bash
+# Create a prompt for runnable code
+cat > my_task.md << 'EOF'
+Write a Python script that:
+1. Reads a CSV file
+2. Calculates average of a column
+3. Prints the result
+EOF
+
+# Auto-generate and fix until it works
+python3 auto_code_loop.py my_task.md
+
+# Result: working code in generated_code.py
+```
+
+### Sample Prompts Included
+
+- `PROMPT.md` - Example for basic code generation
+- `RUNNABLE_PROMPT.md` - Example for executable code generation
+- `example_prompt.txt` - Example for Q&A
+
+Try them out:
+```bash
+python3 my_claude_coder.py PROMPT.md
+python3 auto_code_loop.py RUNNABLE_PROMPT.md
+```
