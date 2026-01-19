@@ -1,0 +1,5 @@
+Explain how PyTorch's Automatic Mixed Precision (AMP) works and why it's beneficial for deep learning training. Include details about:
+1. What is mixed precision training
+2. How gradient scaling works
+3. Performance benefits
+4. When to use it
